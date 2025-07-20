@@ -17,5 +17,4 @@ public class SumController {
     public int getCurrentSum(){
         return sumFileService.getCurrentSum();
     }
-
 }
