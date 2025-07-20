@@ -1,85 +1,100 @@
 # 🧮 Distributed Sum System
 
-A distributed system built with Java & Spring Boot that performs a simple arithmetic operation (sum of two numbers) using gRPC, Kafka, and REST APIs — with support for monitoring and performance testing.
+A distributed system built with **Java**, **Spring Boot**, and **Apache Kafka** to perform a simple arithmetic operation — the sum of two numbers — using **gRPC**, **REST APIs**, and **asynchronous messaging**.  
+Includes observability and performance testing integrations for production-grade deployments.
 
 ---
 
-## 🚀 Project Structure
+## 📁 Project Structure
 
 ```
 distributed-sum-system/
-├── calculator-service-grpc/   # gRPC service to receive two numbers
-├── sum-rest-service/          # REST service to return the current sum
+├── calculator-service-grpc/   # gRPC service to send data to Kafka
+├── sum-rest-service/          # REST service to consume and persist the sum
+├── docker-compose.yml         # Kafka, Zookeeper, Kafdrop setup
+└── README.md
 ```
 
 ---
 
-## 🧱 Tech Stack
+## ⚙️ Tech Stack
 
-| Layer           | Technology                  |
-|----------------|-----------------------------|
-| Language        | Java 17                     |
-| Framework       | Spring Boot 3.5.x           |
-| Communication   | gRPC, REST                  |
-| Messaging       | Apache Kafka                |
-| Storage         | File-based sum              |
-| Observability   | Prometheus, Grafana         |
-| Performance     | k6                          |
-| Build Tools     | Gradle (gRPC), Maven (REST) |
+| Layer         | Technology                  |
+|---------------|-----------------------------|
+| Language      | Java 17                     |
+| Framework     | Spring Boot 3.2+            |
+| RPC Protocol  | gRPC                        |
+| REST API      | Spring Web MVC              |
+| Messaging     | Apache Kafka                |
+| Dashboard     | Kafdrop                     |
+| Monitoring    | Prometheus, Grafana (TBD)   |
+| Performance   | k6                          |
+| Build Tools   | Gradle (gRPC), Maven (REST) |
 
 ---
 
 ## 📦 Services Overview
 
 ### 1. `calculator-service-grpc`
-- gRPC service to receive two numbers via `Add` RPC
-- Will act as a **Kafka producer**
-- Sends the request `{ num1, num2 }` to a Kafka topic
+
+- gRPC service that exposes an `Add` RPC method.
+- Accepts two integers and publishes them as a Kafka message to `calculator-sum-topic`.
+
+✅ Features:
+- gRPC server on `localhost:9090`
+- Kafka **producer** integration
+
+---
 
 ### 2. `sum-rest-service`
-- REST API to **consume messages from Kafka**
-- Adds received number to a **file-based sum**
-- Supports:
-  - `GET /total`: Return current sum
-  - `POST /total/add`: (to be implemented)
+
+- Spring Boot REST API to return the current total sum.
+- Acts as Kafka **consumer**, listens to `calculator-sum-topic`.
+- Persists the sum in a simple file-based store (`sum.txt`).
+
+✅ Endpoints:
+- `GET /total` – Returns the current total
 
 ---
 
-## 🗺️ Roadmap
+## 🧪 Run the Project Locally
 
-- [x] Implement gRPC CalculatorService with Add RPC
-- [x] Expose REST `GET /total` to read from file
-- [ ] Add Kafka producer to gRPC service
-- [ ] Add Kafka consumer to REST service
-- [ ] Use Outbox pattern for reliable message publishing
-- [ ] Add Prometheus and Grafana for monitoring (latency, throughput)
-- [ ] Load test with K6
+### 1. Start Kafka & Kafdrop (Docker)
+
+```bash
+docker-compose up -d
+```
+
+This will spin up:
+- **Zookeeper** on port `2181`
+- **Kafka Broker** on port `9092`
+- **Kafdrop UI** on port `9000`
 
 ---
 
-## 🛠️ How to Run (dev mode)
-
-### 1. gRPC Service
+### 2. Start gRPC Producer
 
 ```bash
 cd calculator-service-grpc
 ./gradlew bootRun
 ```
 
-Test with `grpcurl`:
+Test using `grpcurl`:
 
 ```bash
-grpcurl -plaintext   -d '{"num1": 5, "num2": 10}'   localhost:9090 CalculatorService/Add
+grpcurl -plaintext -d '{"num1": 5, "num2": 10}' localhost:9090 CalculatorService/Add
 ```
 
-### 2. REST Service
+---
+
+### 3. Start REST Consumer
 
 ```bash
 cd sum-rest-service
 ./mvnw spring-boot:run
 ```
 
-Test with curl:
+Access the API:
 
 ```bash
 curl http://localhost:8080/total
@@ -87,10 +102,45 @@ curl http://localhost:8080/total
 
 ---
 
-## 📤 Planned: Outbox Pattern
+## 🔍 Kafka Dashboard – Kafdrop
 
-To ensure **reliable message delivery** from the gRPC service to Kafka, we will implement the **Transactional Outbox Pattern**, which includes:
+Kafka UI is available at:
 
-- Persisting each outgoing event in a dedicated **outbox table** in the same DB transaction as the business operation.
-- A background **Outbox Publisher** will read events from the table and publish them to Kafka.
-- This approach avoids lost updates or duplication during service crashes or retries.
+**➡️ http://localhost:9000**
+
+Browse Kafka topics, inspect partitions, and view message payloads.
+
+![Kafdrop UI](screenshots/kafdrop-ui.png)
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Implement gRPC CalculatorService with Add RPC
+- [x] Expose REST `GET /total` to read sum from file
+- [x] Add Kafka producer to gRPC service
+- [x] Add Kafka consumer to REST service
+- [x] Add Kafdrop for Kafka message inspection
+- [ ] Implement Outbox Pattern for safe Kafka publishing
+- [ ] Add Prometheus + Grafana for monitoring
+- [ ] Run k6 load tests and report metrics
+- [ ] use Kubernetes cluster for deployment
+
+---
+
+## 📤 Outbox Pattern (Planned)
+
+To ensure **exactly-once** delivery from the gRPC producer to Kafka:
+
+- Use a DB-backed **Outbox table** to log events
+- A background process will read and push events to Kafka
+- Avoids lost messages and enables better recovery after failure
+
+---
+
+## 👨‍💻 Author
+
+**Sameh Tarek** – Java Backend Developer  
+[GitHub](https://github.com/sameh-tarek) • [LinkedIn](https://www.linkedin.com/in/sameh-tarek-mohamed-766a0a234/)
+
+---
