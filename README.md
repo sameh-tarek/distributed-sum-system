@@ -62,7 +62,6 @@ distributed-sum-system/
     │    REST Client │           │
     └────────────────┘           │
 
-
 Monitoring & Observability:
 ─────────────────────────────────────
 
@@ -75,15 +74,12 @@ Monitoring & Observability:
    │   Grafana    │
    └──────────────┘
 
-
 Performance Testing:
 ────────────────────
 
    ┌──────────────┐
    │     k6       │ ---> Load test gRPC/REST endpoints
    └──────────────┘
-
-
 ```
 
 ---
@@ -114,6 +110,7 @@ Performance Testing:
 ✅ Features:
 - gRPC server on `localhost:9090`
 - Kafka **producer** integration
+- Outbox pattern for reliable delivery
 
 ---
 
@@ -185,6 +182,38 @@ Browse Kafka topics, inspect partitions, and view message payloads.
 
 ---
 
+## ✅ Outbox Pattern (Implemented)
+
+Outbox pattern has been successfully implemented in `calculator-service-grpc` to ensure **reliable message delivery**.
+
+### 🧩 How It Works:
+
+1. When a gRPC request is received (e.g., `Add`), the event is first saved to an **outbox_event** table.
+2. A background **outbox poller** scans the table periodically:
+   - Reads `PENDING` events
+   - Publishes them to Kafka (`calculator-sum-topic`)
+   - Updates the status to `PUBLISHED`
+
+### 🗃️ Table Structure:
+
+```sql
+CREATE TABLE outbox_event (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    event_id VARCHAR(255),
+    aggregate_type VARCHAR(255),
+    payload CLOB,
+    status VARCHAR(50),
+    created_at TIMESTAMP,
+    published_at TIMESTAMP
+);
+```
+
+### 📸 Screenshot – H2 Outbox Table:
+
+![Outbox Table Data](screenshots/outbox-table-preview.png)
+
+---
+
 ## 🗺️ Roadmap
 
 - [x] Implement gRPC CalculatorService with Add RPC
@@ -192,26 +221,14 @@ Browse Kafka topics, inspect partitions, and view message payloads.
 - [x] Add Kafka producer to gRPC service
 - [x] Add Kafka consumer to REST service
 - [x] Add Kafdrop for Kafka message inspection
-- [ ] Implement Outbox Pattern for safe Kafka publishing
+- [x] Implement Outbox Pattern for safe Kafka publishing
 - [ ] Add Prometheus + Grafana for monitoring
 - [ ] Run k6 load tests and report metrics
-- [ ] use Kubernetes cluster for deployment
-
----
-
-## 📤 Outbox Pattern (Planned)
-
-To ensure **exactly-once** delivery from the gRPC producer to Kafka:
-
-- Use a DB-backed **Outbox table** to log events
-- A background process will read and push events to Kafka
-- Avoids lost messages and enables better recovery after failure
+- [ ] Use Kubernetes cluster for deployment
 
 ---
 
 ## 👨‍💻 Author
 
-**Sameh Tarek** – Java Backend Developer  
+**Sameh Tarek** – Backend Engineer
 [GitHub](https://github.com/sameh-tarek) • [LinkedIn](https://www.linkedin.com/in/sameh-tarek-mohamed-766a0a234/)
-
----
