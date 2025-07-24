@@ -19,6 +19,8 @@ dependencies {
     implementation 'io.grpc:grpc-netty-shaded:1.67.1'
     implementation 'io.grpc:grpc-protobuf:1.67.1'
     implementation 'io.grpc:grpc-stub:1.67.1'
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+
 
     implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
     implementation 'org.springframework.boot:spring-boot-starter'

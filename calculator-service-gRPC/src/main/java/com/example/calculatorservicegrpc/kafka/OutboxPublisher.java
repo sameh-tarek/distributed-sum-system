@@ -23,7 +23,7 @@ public class OutboxPublisher {
     @Value("${kafka.topic.sum}")
     private String topic;
 
-    @Scheduled(fixedDelay = 5000) // every 3 seconds
+    @Scheduled(fixedDelay = 5000) // every 5 seconds
     public void publishPendingEvents() {
         List<DomainEvent> events = repository.findByStatus(EventStatus.PENDING);
 
