@@ -1,3 +1,4 @@
+
 # 🧮 Distributed Sum System
 
 A distributed system built with **Java**, **Spring Boot**, and **Apache Kafka** to perform a simple arithmetic operation — the sum of two numbers — using **gRPC**, **REST APIs**, and **asynchronous messaging**.  
@@ -11,12 +12,14 @@ Includes observability and performance testing integrations for production-grade
 distributed-sum-system/
 ├── calculator-service-grpc/ # gRPC service to send data to Kafka
 ├── sum-rest-service/ # REST service to consume and persist the sum
+├── k6-tests/ # Load test scripts for gRPC and REST
 ├── docker-compose.yml # Kafka, Zookeeper, Prometheus, Grafana, Kafdrop setup
 ├── prometheus.yml # Prometheus scrape configuration for REST & gRPC services
 └── README.md
 ```
 
 ---
+
 ```mermaid
 flowchart TD
     grpcClient["gRPC Client (grpcurl / Postman)"] --> calculatorService
@@ -52,7 +55,6 @@ flowchart TD
         k6["k6 Load Testing Tool"]
     end
 ```
-
 
 ---
 
@@ -138,6 +140,36 @@ curl http://localhost:8080/total
 
 ---
 
+## 🧪 Load Testing with k6
+
+You can run REST and gRPC performance tests using [k6](https://k6.io). Scripts are located in the `k6-tests/` directory.
+
+### ➤ REST Test
+
+```bash
+docker run --rm -v "$PWD/k6-tests:/scripts" grafana/k6 run /scripts/rest-test.js
+```
+
+✅ Hits the `/total` REST endpoint with 1000 virtual users for 10 seconds.  
+📸 Check out the results in your terminal and Grafana dashboards.
+
+### ➤ gRPC Test
+
+```bash
+docker run --rm --network host -v "$PWD/k6-tests:/scripts" grafana/k6 run /scripts/grpc-test.js
+```
+
+✅ Invokes the `Add` method over gRPC with 1000 VUs.  
+📸 Response time and throughput metrics are printed and can be visualized in Grafana.
+
+### 📂 Screenshots
+
+| REST | gRPC |
+|------|------|
+| ![REST k6 Results](screenshots/k6-rest.png) | ![gRPC k6 Results](screenshots/k6-grpc.png) |
+
+---
+
 ## 🔍 Kafka Dashboard – Kafdrop
 
 Kafka UI is available at:
@@ -215,7 +247,7 @@ Grafana is used to visualize real-time metrics collected from Prometheus.
 | `gRPC Avg Response Time`           | Latency per gRPC method                  |
 | `REST Requests Count`              | HTTP request count grouped by URI        |
 | `REST Avg Response Time`           | Average response time for REST endpoints |
-| `Kafka Consumer rate` | rate per Kafka consumer group            |
+| `Kafka Consumer rate`              | Rate per Kafka consumer group            |
 
 ### Example Prometheus Queries
 
@@ -233,6 +265,8 @@ sum(http_server_requests_seconds_count{application="sum-rest-service"}) by (uri)
 rate(http_server_requests_seconds_sum{application="sum-rest-service"}[1m]) / rate(http_server_requests_seconds_count{application="sum-rest-service"}[1m])
 ```
 
+---
+
 ## 🗺️ Roadmap
 
 - [x] Implement gRPC CalculatorService with Add RPC
@@ -242,7 +276,7 @@ rate(http_server_requests_seconds_sum{application="sum-rest-service"}[1m]) / rat
 - [x] Add Kafdrop for Kafka message inspection
 - [x] Implement Outbox Pattern for safe Kafka publishing
 - [x] Add Prometheus + Grafana for monitoring
-- [ ] Run k6 load tests and report metrics
+- [x] Run k6 load tests and report metrics
 - [ ] Use Kubernetes cluster for deployment
 
 ---
