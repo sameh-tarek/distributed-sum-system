@@ -1,5 +1,6 @@
 server:
   port: 8081
+
 grpc:
   server:
     port: 9090
@@ -7,6 +8,9 @@ grpc:
     reflection-service-enabled: true
 
 spring:
+  application:
+    name: calculator-service-grpc
+
   kafka:
     bootstrap-servers: localhost:9092
     producer:
@@ -17,11 +21,13 @@ spring:
     console:
       enabled: true
       path: /h2-console
+
   datasource:
     url: jdbc:h2:mem:outboxdb
     driver-class-name: org.h2.Driver
     username: sa
     password:
+
   jpa:
     hibernate:
       ddl-auto: update
@@ -31,3 +37,17 @@ spring:
 kafka:
   topic:
     sum: calculator-sum-topic
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
+
+
