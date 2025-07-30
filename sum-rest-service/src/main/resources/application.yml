@@ -1,11 +1,30 @@
 spring:
+  application:
+    name: sum-rest-service
+
   kafka:
     bootstrap-servers: localhost:9092
     consumer:
       group-id: sum-group
       key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
       value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      # ✅ Let Spring Boot auto-register Micrometer Kafka metrics
+      properties:
+        # Optional, helps metrics but not required for Micrometer
+        auto.offset.reset: earliest
 
 kafka:
   topic:
     sum: calculator-sum-topic
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health, info, prometheus
+  endpoint:
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: ${spring.application.name}
