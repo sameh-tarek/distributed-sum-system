@@ -17,73 +17,42 @@ distributed-sum-system/
 ```
 
 ---
+```mermaid
+flowchart TD
+    grpcClient["gRPC Client (grpcurl / Postman)"] --> calculatorService
 
-## 📌 Architecture Flow:
+    subgraph "Calculator Service"
+        calculatorService["calculator-service-grpc (gRPC Server + Kafka Producer)"]
+        outbox["Outbox Table"]
+        poller["Outbox Poller"]
+        calculatorService --> outbox
+        outbox --> poller
+        poller --> kafka
+    end
 
-```sql
-           ┌────────────────────┐
-           │                    │
-           │ gRPC Client (e.g., │
-           │ grpcurl/Postman)   │
-           │                    │
-           └────────┬───────────┘
-                    │
-                    ▼
-     ┌─────────────────────────────┐
-     │  calculator-service-grpc    │
-     │  (gRPC Server + Kafka Prod) │
-     └────────────┬────────────────┘
-                  │
-          ┌───────▼────────┐
-          │  Outbox Table  │◄───┐
-          └───────┬────────┘    │
-                  │             │ DB Transaction
-          ┌───────▼────────┐    │
-          │  Outbox Poller │────┘
-          └───────┬────────┘
-                  │
-                  ▼
-         ┌────────────────┐
-         │ Apache Kafka   │◄─────┐
-         │ Topic:         │      │
-         │ calculator-sum │      │
-         └───────┬────────┘      │
-                 │               │
- ┌───────────────▼────────────┐  │
- │   sum-rest-service         │  │
- │   (Kafka Consumer + File)  │  │
- └──────────┬─────────────────┘  │
-            │                    │
-            ▼                    │
-     ┌───────────────┐           │
-     │   sum.txt     │           │
-     └───────────────┘           │
-            ▲                    │
-            │ GET /total         │
-            │                    │
-    ┌───────┴────────┐           │
-    │    REST Client │           │
-    └────────────────┘           │
+    kafka["Apache Kafka (Topic: calculator-sum)"] --> restService
 
-Monitoring & Observability:
-─────────────────────────────────────
+    subgraph "REST Service"
+        restService["sum-rest-service (Kafka Consumer + File Writer)"]
+        file["sum.txt"]
+        restService --> file
+    end
 
-    ┌──────────────┐     ┌──────────────┐
-    │  Prometheus  │◄────│  REST + gRPC │  <-- Export metrics (Micrometer)
-    └────┬─────────┘     └──────────────┘
-         │
-         ▼
-   ┌──────────────┐
-   │   Grafana    │
-   └──────────────┘
+    restClient["REST Client"] -->|GET /total| restService
 
-Performance Testing:
-────────────────────
+    subgraph "Monitoring"
+        prometheus["Prometheus"]
+        grafana["Grafana"]
+        calculatorService -->|Micrometer metrics| prometheus
+        restService -->|Micrometer metrics| prometheus
+        prometheus --> grafana
+    end
 
-   ┌──────────────┐
-   │     k6       │ ---> Load test gRPC/REST endpoints
-   └──────────────┘
+    subgraph "Performance Testing"
+        k6["k6 Load Testing Tool"]
+    end
 ```
+
 
 ---
 
