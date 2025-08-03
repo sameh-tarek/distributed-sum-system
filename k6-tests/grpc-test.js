@@ -2,11 +2,11 @@ import grpc from 'k6/net/grpc';
 import { check } from 'k6';
 
 const client = new grpc.Client();
-client.load(['.'], 'calculator.proto'); // تأكد أن البروتو في نفس المجلد
+client.load(['.'], 'calculator.proto'); 
 
 export const options = {
-  vus: 1000,         // عدد المستخدمين الافتراضيين
-  duration: '10s',   // مدة التشغيل
+  vus: 1000,         
+  duration: '10s',   
 };
 
 export default () => {
